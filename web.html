@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand-Format Stage Graphics & Concert Scrims</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0E1111;     /* Charcoal / Stage Black */
+            --secondary-color: #E5A93B;   /* Safety Amber */
+            --text-dark: #1F2421;         /* Off-Black text */
+            --text-light: #F4F7F6;        /* Light background element text */
+            --bg-light: #FFFFFF;
+            --bg-industrial: #F8F9FA;     /* Technical Spec Background Gray */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; color: var(--text-dark); background-color: var(--bg-light); line-height: 1.6; }
+        
+        header { background-color: var(--primary-color); padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--secondary-color); position: sticky; top: 0; z-index: 100; }
+        .logo { color: var(--text-light); font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: -0.02em; }
+        .logo span { color: var(--secondary-color); }
+        .emergency-btn { background-color: var(--secondary-color); color: var(--primary-color); border: none; padding: 10px 20px; font-weight: 700; text-transform: uppercase; text-decoration: none; border-radius: 4px; font-size: 0.9rem; cursor: pointer; transition: transform 0.2s; }
+        .emergency-btn:hover { transform: scale(1.05); }
+
+        .hero { background-color: var(--primary-color); color: var(--text-light); padding: 80px 20px; text-align: center; }
+        .hero h1 { font-size: 2.5rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; letter-spacing: -0.02em; }
+        .hero p { font-size: 1.2rem; color: #A0A5A8; max-width: 800px; margin: 0 auto 30px; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        
+        h2 { font-size: 1.8rem; font-weight: 900; text-transform: uppercase; margin-bottom: 25px; border-left: 5px solid var(--secondary-color); padding-left: 15px; }
+
+        /* Capabilities Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 60px; }
+        .card { background-color: var(--bg-industrial); padding: 30px; border-radius: 6px; border-top: 4px solid var(--primary-color); }
+        .card h3 { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; margin-bottom: 12px; }
+
+        /* Interactive Decision Tree Widget */
+        .widget-box { background-color: var(--primary-color); color: var(--text-light); padding: 40px; border-radius: 8px; margin-bottom: 60px; border: 1px solid #2A2F32; }
+        .step-container { display: none; }
+        .step-container.active { display: block; }
+        .widget-box h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: var(--secondary-color); text-transform: uppercase; }
+        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 25px; }
+        .tree-btn { background-color: transparent; border: 2px solid var(--text-light); color: var(--text-light); padding: 12px 24px; font-weight: 700; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+        .tree-btn:hover { background-color: var(--text-light); color: var(--primary-color); }
+        .result-box { background-color: #1A1F21; border-left: 4px solid var(--secondary-color); padding: 20px; border-radius: 4px; margin-top: 15px; }
+        .result-box h4 { color: var(--secondary-color); font-weight: 900; font-size: 1.2rem; margin-bottom: 10px; text-transform: uppercase; }
+        .restart-btn { background-color: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 15px; font-size: 0.8rem; text-transform: uppercase; }
+
+        /* Tables */
+        .table-wrapper { overflow-x: auto; margin-bottom: 60px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 15px; border-bottom: 1px solid #E0E0E0; }
+        th { background-color: var(--primary-color); color: var(--text-light); text-transform: uppercase; font-size: 0.9rem; }
+        tr:nth-child(even) { background-color: var(--bg-industrial); }
+
+        /* Form Layout */
+        .form-section { background-color: var(--bg-industrial); padding: 40px; border-radius: 8px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 8px; }
+        .form-group input, .form-group select { padding: 12px; border: 1px solid #CCC; border-radius: 4px; font-family: inherit; font-size: 1rem; }
+        .upload-box { border: 2px dashed #AAA; padding: 30px; text-align: center; background: #FFF; border-radius: 4px; margin-bottom: 20px; cursor: pointer; }
+        .submit-btn { background-color: var(--primary-color); color: var(--text-light); border: none; padding: 15px 30px; font-weight: 700; text-transform: uppercase; border-radius: 4px; font-size: 1rem; cursor: pointer; width: 100%; }
+        .submit-btn:hover { background-color: #232B2B; }
+
+        footer { background-color: var(--primary-color); color: #7A8285; text-align: center; padding: 30px 20px; font-size: 0.85rem; border-top: 1px solid #2A2F32; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .widget-box { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">STAGE<span>PRINTS</span> LOGISTICS</div>
+        <a href="#intake" class="emergency-btn">Emergency Rush</a>
+    </header>
+
+    <section class="hero">
+        <h1>Stage Graphics At Scale.<br>Seamless. Survivable.</h1>
+        <p>Premium outdoor wind-mesh up to 10’ x 125’ and high-impact indoor solid vinyl up to 16’ x 150’ seamless. True 24-hour emergency rush dispatch with overnight freight straight to your venue loading dock.</p>
+        <a href="#tree" class="emergency-btn" style="background:transparent; border:2px solid var(--secondary-color); color:var(--secondary-color);">Select Substrate</a>
+    </section>
+
+    <div class="container">
+        
+        <!-- Capabilities Grid -->
+        <section class="grid">
+            <div class="card">
+                <h3>Grand-Format Sizing</h3>
+                <p>We eliminate split lines. Our single-print capacities strip away structural weak points, ensuring elements stand strong against high-velocity outdoor amphitheater truss wind loads.</p>
+            </div>
+            <div class="card">
+                <h3>24-Hour Emergency Lifeline</h3>
+                <p>Live production depends on strict execution windows. Orders approved before cutoff print and ship same-day. Saturday emergency deliveries available to catch weekend tour stops.</p>
+            </div>
+            <div class="card">
+                <h3>100% Venue Compliant</h3>
+                <p>All fabrics strictly pass NFPA 701 fire-retardant evaluations. Signed digital certificates are provided instantly alongside corporate ACORD 25 COIs containing standard corporate endorsements.</p>
+            </div>
+        </section>
+
+        <!-- Interactive Decision Tree Widget -->
+        <h2 id="tree">Substrate Selection Tree</h2>
+        <section class="widget-box">
+            
+            <!-- Step 1 -->
+            <div id="step-1" class="step-container active">
+                <h3>Step 1: Where is the stage located?</h3>
+                <p>Select your concert layout footprint to establish weather and airflow risk profiles.</p>
+                <div class="btn-group">
+                    <button class="tree-btn" onclick="goToStep(2)">Outdoor Amphitheater / Festival Main Stage</button>
+                    <button class="tree-btn" onclick="goToStep(3)">Indoor Arena / Theater / Convention Center</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Outdoor Route -->
+            <div id="step-2" class="step-container">
+                <h3>Step 2: Airflow Compliance Protocol</h3>
+                <p>Will the graphics layer hang directly over or in front of the main PA sound speaker bays?</p>
+                <div class="btn-group">
+                    <button class="tree-btn" onclick="showResult('acoustic')">Yes, Over Audio Gear</button>
+                    <button class="tree-btn" onclick="showResult('mesh8oz')">No, Standard Stage Trusses</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Indoor Route -->
+            <div id="step-3" class="step-container">
+                <h3>Step 3: Illumination & Shadow Control</h3>
+                <p>Will high-intensity stage lighting fixtures or automated moving heads be rigged directly behind the backdrop layer?</p>
+                <div class="btn-group">
+                    <button class="tree-btn" onclick="showResult('blockout')">Yes, Heavy Rear Backlighting</button>
+                    <button class="tree-btn" onclick="showResult('indoorStandard')">No, Standard Front/Top Truss Lighting</button>
+                </div>
+            </div>
+
+            <!-- Result Box Display -->
+            <div id="result-step" class="step-container">
+                <h3>Recommended Specification</h3>
+                <div id="result-content"></div>
+                <button class="restart-btn" onclick="resetTree()">Restart Selector</button>
+            </div>
+
+        </section>
