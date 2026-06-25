@@ -80,7 +80,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .form-group input, .form-group select {
+  .form-group input, .form-group select, .form-group textarea {
     width: 100%;
     background: var(--bg);
     border: 1px solid var(--border);
@@ -89,9 +89,8 @@
     font-family: 'Courier New', monospace;
     font-size: 13px;
     border-radius: 4px;
-    transition: border-color 0.2s;
   }
-  .form-group input:focus, .form-group select:focus {
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
     outline: none;
     border-color: var(--accent);
   }
@@ -190,9 +189,6 @@
     border-radius: 8px;
     overflow: hidden;
   }
-  .view-card.full-width {
-    grid-column: 1 / -1;
-  }
   .view-header {
     padding: 10px 16px;
     border-bottom: 1px solid var(--border);
@@ -265,6 +261,16 @@
 
 <div class="layout">
   <div class="sidebar">
+    <h2>Job Information</h2>
+    <div class="form-group">
+      <label>Job Name</label>
+      <input type="text" id="jobName" value="YOUR EVENT NAME" onchange="generateAll()">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="jobDesc" rows="2" onchange="generateAll()">Stage banner layout</textarea>
+    </div>
+
     <h2>Stage Configuration</h2>
 
     <div class="section-label">Stage Dimensions</div>
@@ -306,11 +312,12 @@
     <button class="btn generate" onclick="generateAll()">⚡ Generate Mockups</button>
 
     <div class="download-row">
-      <button class="btn export" onclick="downloadCanvas('cvFront','blueprint-front')">↓ Front Blueprint</button>
+      <button class="btn export" onclick="downloadCanvas('cvFront','blueprint-front')">↓ Front</button>
       <button class="btn export" onclick="downloadCanvas('cvIsoLeft','blueprint-iso-left')">↓ ISO Left</button>
       <button class="btn export" onclick="downloadCanvas('cvIsoRight','blueprint-iso-right')">↓ ISO Right</button>
     </div>
-    <button class="btn export" onclick="printViews()">🖨️ Print All (B&amp;W Landscape)</button>
+    <button class="btn export" onclick="printViews()">🖨️ Print All (B&amp;W)</button>
+    <button class="btn export" onclick="togglePrintMode()">🖨️ Toggle Print Mode (White BG)</button>
   </div>
 
   <div class="main">
@@ -363,6 +370,8 @@
 <script>
 // ─── Banner management ───────────────────────────────────────────────────────
 let bannerCount = 0;
+let printMode = false;
+
 const bannerPresets = [
   { name: 'Front Main', w: 23.5, h: 12.67, loc: 'front' },
   { name: 'Top Header', w: 36.75, h: 3.67, loc: 'top', span: 'full' },
@@ -396,8 +405,8 @@ function addBanner(preset) {
     <div class="form-group">
       <label>Span</label>
       <select id="bspan-${id}" onchange="generateAll()">
-        <option value="stage" ${p.span==='stage'?'selected':''}>Between wings (stage width)</option>
-        <option value="full" ${p.span==='full'?'selected':''}>Full width (incl. wings)</option>
+        <option value="stage" ${p.span==='stage'?'selected':''}>Between wings</option>
+        <option value="full" ${p.span==='full'?'selected':''}>Full width</option>
       </select>
     </div>` : ''}
     <div class="form-group"><label>Label / Name</label><input type="text" id="blabel-${id}" value="${p.name}" onchange="generateAll()"></div>
@@ -421,10 +430,10 @@ function getBanners() {
   return result;
 }
 
-// ─── Pre-populate from image 3 reference ─────────────────────────────────────
+// Pre-populate
 bannerPresets.forEach(p => addBanner(p));
 
-// ─── Generate all views ───────────────────────────────────────────────────────
+// Generate
 function generateAll() {
   const cfg = {
     stageW: parseFloat(document.getElementById('stageW').value),
@@ -434,13 +443,8 @@ function generateAll() {
     wingW: parseFloat(document.getElementById('wingW').value),
     wingH: parseFloat(document.getElementById('wingH').value),
     banners: getBanners(),
-    colors: {
-      stage: '#2a2a2a',
-      truss: '#c0c0c0',
-      light: '#8844ff',
-      banners: ['#ff4444', '#4488ff', '#44cc88'],
-    },
-    eventName: 'YOUR EVENT NAME',
+    jobName: document.getElementById('jobName').value || 'EVENT',
+    jobDesc: document.getElementById('jobDesc').value || '',
   };
 
   drawBlueprintFront(cfg);
@@ -448,30 +452,34 @@ function generateAll() {
   drawBlueprintIsoRight(cfg);
 }
 
-// ─── Print function ───────────────────────────────────────────────────────────
+function togglePrintMode() {
+  printMode = !printMode;
+  generateAll();
+}
+
+// Print
 function printViews() {
   const printWin = window.open('', '_blank');
   printWin.document.write(`
     <html><head><title>Stage Banner Blueprints</title>
     <style>
-      @page { size: landscape; margin: 0.5in; }
-      body { font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
-      .view { page-break-after: always; }
-      canvas { max-width: 100%; height: auto; display: block; margin: 10px auto; border: 1px solid #000; }
-      h2 { text-align: center; }
+      @page { size: landscape; margin: 0.4in; }
+      body { font-family: 'Courier New', monospace; margin:0; padding:10px; background:white; color:black; }
+      .view { page-break-after: always; margin-bottom: 20px; }
+      img { max-width: 100%; height: auto; border: 1px solid #000; }
+      h2 { text-align: center; margin: 10px 0; }
     </style>
     </head><body>
   `);
-  const canvases = ['cvFront', 'cvIsoLeft', 'cvIsoRight'];
-  canvases.forEach((id, idx) => {
+  ['cvFront','cvIsoLeft','cvIsoRight'].forEach((id, i) => {
     const cv = document.getElementById(id);
     if (cv.style.display !== 'none') {
-      printWin.document.write(`<div class="view"><h2>${['Front Elevation', 'ISO Left', 'ISO Right'][idx]}</h2><img src="${cv.toDataURL('image/png')}" /></div>`);
+      printWin.document.write(`<div class="view"><h2>${['Front Elevation','ISO Left View','ISO Right View'][i]}</h2><img src="${cv.toDataURL('image/png')}"></div>`);
     }
   });
   printWin.document.write('</body></html>');
   printWin.document.close();
-  setTimeout(() => printWin.print(), 500);
+  setTimeout(() => printWin.print(), 600);
 }
 
 function showCanvas(canvasId, phId) {
@@ -481,18 +489,46 @@ function showCanvas(canvasId, phId) {
   return cv;
 }
 
-// ─── BLUEPRINT helpers ────────────────────────────────────────────────────────
+// BLUEPRINT helpers
 const BP = {
   bg: '#0a1628',
   line: '#4a9eff',
   dimLine: '#a8d4ff',
   dimText: '#c8e4ff',
   banner: '#ffdd44',
-  bannerAlpha: 'rgba(255,221,68,0.15)',
   labelColor: '#7fbfff',
   grid: 'rgba(74,158,255,0.08)',
   trussX: '#2a5a9a',
 };
+
+function getColors(isPrint) {
+  if (!isPrint) return {
+    bg: '#0a1628',
+    line: '#4a9eff',
+    dimLine: '#a8d4ff',
+    dimText: '#c8e4ff',
+    grid: 'rgba(74,158,255,0.08)',
+    bannerFront: 'rgba(255,80,80,0.2)',
+    bannerTop: 'rgba(80,220,150,0.25)',   // green for top
+    bannerWing: 'rgba(80,220,150,0.2)',
+    strokeFront: '#ff5050',
+    strokeTop: '#50dc96',
+    strokeWing: '#50dc96'
+  };
+  return {
+    bg: '#ffffff',
+    line: '#000000',
+    dimLine: '#000000',
+    dimText: '#000000',
+    grid: 'rgba(0,0,0,0.08)',
+    bannerFront: 'rgba(200,200,200,0.6)',
+    bannerTop: 'rgba(180,240,180,0.6)',
+    bannerWing: 'rgba(180,240,180,0.6)',
+    strokeFront: '#000000',
+    strokeTop: '#000000',
+    strokeWing: '#000000'
+  };
+}
 
 function setupCanvas(canvasId, w, h) {
   const cv = document.getElementById(canvasId);
@@ -500,31 +536,28 @@ function setupCanvas(canvasId, w, h) {
   return cv.getContext('2d');
 }
 
-function drawGrid(ctx, w, h, scale, ft = 5) {
-  ctx.strokeStyle = BP.grid;
+function drawGrid(ctx, w, h, scale, ft = 5, colors) {
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 0.5;
   const step = ft * scale;
   for (let x = 0; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
   for (let y = 0; y < h; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
 }
 
-function drawDim(ctx, x1, y1, x2, y2, label, offset=18) {
+function drawDim(ctx, x1, y1, x2, y2, label, offset=18, colors) {
   const dx = x2-x1, dy = y2-y1;
-  const len = Math.sqrt(dx*dx+dy*dy);
+  const len = Math.sqrt(dx*dx+dy*dy) || 1;
   const nx = -dy/len*offset, ny = dx/len*offset;
-  ctx.strokeStyle = BP.dimLine; ctx.lineWidth = 0.8; ctx.setLineDash([4,3]);
+  ctx.strokeStyle = colors.dimLine; ctx.lineWidth = 0.8; ctx.setLineDash([4,3]);
   ctx.beginPath(); ctx.moveTo(x1+nx,y1+ny); ctx.lineTo(x2+nx,y2+ny); ctx.stroke();
   ctx.setLineDash([]);
-  // tick marks
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x1+nx,y1+ny); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2+nx,y2+ny); ctx.stroke();
-  // arrow heads
   const ang = Math.atan2(dy,dx);
   const mx = (x1+x2)/2+nx, my = (y1+y2)/2+ny;
-  ctx.fillStyle = BP.dimLine;
+  ctx.fillStyle = colors.dimLine;
   drawArrow(ctx, mx, my, ang, 6);
-  // label
-  ctx.fillStyle = BP.dimText;
+  ctx.fillStyle = colors.dimText;
   ctx.font = '10px Courier New';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const lx = mx+ny*0.5, ly = my-nx*0.5;
@@ -537,14 +570,13 @@ function drawArrow(ctx, x, y, ang, size) {
   ctx.restore();
 }
 
-function drawTrussSegment(ctx, x1,y1,x2,y2,thick=8) {
-  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+function drawTrussSegment(ctx, x1,y1,x2,y2,thick=8, colors) {
+  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1;
   const nx=-dy/len*(thick/2),ny=dx/len*(thick/2);
-  ctx.strokeStyle=BP.line; ctx.lineWidth=1.5; ctx.setLineDash([]);
+  ctx.strokeStyle=colors.line; ctx.lineWidth=1.5; ctx.setLineDash([]);
   ctx.beginPath(); ctx.moveTo(x1+nx,y1+ny); ctx.lineTo(x2+nx,y2+ny); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x1-nx,y1-ny); ctx.lineTo(x2-nx,y2-ny); ctx.stroke();
-  // diagonals
-  ctx.strokeStyle=BP.trussX; ctx.lineWidth=0.8;
+  ctx.strokeStyle=colors.line; ctx.lineWidth=0.8;
   const steps=Math.max(2,Math.round(len/20));
   for(let i=0;i<steps;i++){
     const t0=i/steps,t1=(i+1)/steps;
@@ -560,22 +592,22 @@ function drawTrussSegment(ctx, x1,y1,x2,y2,thick=8) {
 function drawBlueprintFront(cfg) {
   const PAD = 80, W = 900, H = 550;
   const ctx = setupCanvas('cvFront', W, H);
-  const cv = showCanvas('cvFront','phFront');
+  showCanvas('cvFront','phFront');
+  const colors = getColors(printMode);
 
-  // bg
-  ctx.fillStyle = BP.bg; ctx.fillRect(0,0,W,H);
-  drawGrid(ctx,W,H,10);
+  ctx.fillStyle = colors.bg; ctx.fillRect(0,0,W,H);
+  drawGrid(ctx,W,H,10,5,colors);
 
-  // title block
-  ctx.fillStyle = BP.line; ctx.font = 'bold 11px Courier New';
+  ctx.fillStyle = colors.line; ctx.font = 'bold 11px Courier New';
   ctx.fillText('FRONT ELEVATION  —  SCALE: NTS', PAD, 22);
-  ctx.fillStyle = BP.dimText; ctx.font = '10px Courier New';
-  ctx.fillText(`STAGE: ${cfg.stageW}' W × ${cfg.stageD}' D × ${cfg.stageH}' H   ROOF: ${cfg.roofH}' H`, PAD, 36);
+  ctx.fillStyle = colors.dimText; ctx.font = '10px Courier New';
+  ctx.fillText(`${cfg.jobName} | ${cfg.jobDesc}`, PAD, 36);
+  ctx.fillText(`STAGE: ${cfg.stageW}' W × ${cfg.stageD}' D × ${cfg.stageH}' H   ROOF: ${cfg.roofH}' H`, PAD, 50);
 
   const totalW = cfg.stageW + cfg.wingW * 2;
   const totalH = cfg.roofH;
   const scaleX = (W - PAD*2) / totalW;
-  const scaleY = (H - PAD*2 - 40) / totalH;
+  const scaleY = (H - PAD*2 - 60) / totalH;
   const scale = Math.min(scaleX, scaleY);
 
   const ox = PAD + (W - PAD*2 - totalW*scale)/2;
@@ -584,63 +616,61 @@ function drawBlueprintFront(cfg) {
   function fx(ft) { return ox + ft*scale; }
   function fy(ft) { return oy - ft*scale; }
 
-  // Ground line
-  ctx.strokeStyle = BP.line; ctx.lineWidth = 1; ctx.setLineDash([6,3]);
+  ctx.strokeStyle = colors.line; ctx.lineWidth = 1; ctx.setLineDash([6,3]);
   ctx.beginPath(); ctx.moveTo(PAD/2,oy); ctx.lineTo(W-PAD/2,oy); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = BP.dimLine; ctx.font='9px Courier New'; ctx.fillText('GL ±0',PAD/2-5,oy-3);
+  ctx.fillStyle = colors.dimText; ctx.font='9px Courier New'; ctx.fillText('GL ±0',PAD/2-5,oy-3);
 
   const wL = cfg.wingW, wR = cfg.stageW + cfg.wingW;
   const stageTop = cfg.stageH;
   const wingTop = cfg.stageH + cfg.wingH;
 
-  // Stage platform
-  ctx.strokeStyle = BP.line; ctx.lineWidth = 2; ctx.setLineDash([]);
+  ctx.strokeStyle = colors.line; ctx.lineWidth = 2;
   ctx.strokeRect(fx(wL), fy(stageTop), cfg.stageW*scale, stageTop*scale);
-  ctx.fillStyle = 'rgba(74,158,255,0.05)'; ctx.fillRect(fx(wL), fy(stageTop), cfg.stageW*scale, stageTop*scale);
+  ctx.fillStyle = 'rgba(100,100,255,0.05)'; ctx.fillRect(fx(wL), fy(stageTop), cfg.stageW*scale, stageTop*scale);
 
-  // Stage deck hatch
-  ctx.strokeStyle = 'rgba(74,158,255,0.15)'; ctx.lineWidth = 0.5;
+  ctx.strokeStyle = 'rgba(100,100,255,0.15)'; ctx.lineWidth = 0.5;
   for(let x=0;x<cfg.stageW*scale;x+=12){
     ctx.beginPath(); ctx.moveTo(fx(wL)+x, fy(stageTop)); ctx.lineTo(fx(wL)+x, oy); ctx.stroke();
   }
 
-  // Roof truss
-  drawTrussSegment(ctx, fx(wL), fy(cfg.roofH), fx(wR), fy(cfg.roofH), 10);
+  drawTrussSegment(ctx, fx(wL), fy(cfg.roofH), fx(wR), fy(cfg.roofH), 10, colors);
 
-  // Left upright truss
-  drawTrussSegment(ctx, fx(0), fy(0), fx(0), fy(cfg.roofH+1), 10);
-  drawTrussSegment(ctx, fx(wL), fy(stageTop), fx(wL), fy(cfg.roofH), 8);
+  drawTrussSegment(ctx, fx(0), fy(0), fx(0), fy(cfg.roofH+1), 10, colors);
+  drawTrussSegment(ctx, fx(wL), fy(stageTop), fx(wL), fy(cfg.roofH), 8, colors);
 
-  // Right upright truss
-  drawTrussSegment(ctx, fx(wR+cfg.wingW), fy(0), fx(wR+cfg.wingW), fy(cfg.roofH+1), 10);
-  drawTrussSegment(ctx, fx(wR), fy(stageTop), fx(wR), fy(cfg.roofH), 8);
+  drawTrussSegment(ctx, fx(wR+cfg.wingW), fy(0), fx(wR+cfg.wingW), fy(cfg.roofH+1), 10, colors);
+  drawTrussSegment(ctx, fx(wR), fy(stageTop), fx(wR), fy(cfg.roofH), 8, colors);
 
-  // Wing boxes
-  ctx.strokeStyle = BP.line; ctx.lineWidth = 1.5;
+  ctx.strokeStyle = colors.line; ctx.lineWidth = 1.5;
   ctx.strokeRect(fx(0), fy(wingTop), wL*scale, wingTop*scale);
   ctx.strokeRect(fx(wR), fy(wingTop), cfg.wingW*scale, wingTop*scale);
 
-  // Speaker/monitor stacks in wings
   const spkSlots = 3;
   for(let i=0;i<spkSlots;i++){
     const sy = fy(cfg.stageH+(i+1)*(cfg.wingH/spkSlots));
     const sh = (cfg.wingH/spkSlots)*scale - 4;
-    // left
-    ctx.strokeStyle = 'rgba(74,158,255,0.5)'; ctx.lineWidth = 0.8;
+    ctx.strokeStyle = 'rgba(100,100,255,0.5)'; ctx.lineWidth = 0.8;
     ctx.strokeRect(fx(0)+3, sy, wL*scale-6, sh);
     ctx.beginPath(); ctx.arc(fx(wL/2), sy+sh/2, sh*0.28, 0, Math.PI*2); ctx.stroke();
-    // right
     ctx.strokeRect(fx(wR)+3, sy, cfg.wingW*scale-6, sh);
     ctx.beginPath(); ctx.arc(fx(wR+cfg.wingW/2), sy+sh/2, sh*0.28, 0, Math.PI*2); ctx.stroke();
   }
 
   // Banners
-  const bColors = ['rgba(255,80,80,0.2)','rgba(80,150,255,0.2)','rgba(80,220,150,0.2)','rgba(255,200,50,0.2)'];
-  const bStrokes = ['#ff5050','#5096ff','#50dc96','#ffc832'];
   cfg.banners.forEach((b, i) => {
-    const col = bColors[i % bColors.length];
-    const str = bStrokes[i % bStrokes.length];
+    let col, str;
+    if (b.loc === 'top') {
+      col = colors.bannerTop;
+      str = colors.strokeTop;
+    } else if (b.loc === 'front') {
+      col = colors.bannerFront;
+      str = colors.strokeFront;
+    } else {
+      col = colors.bannerWing;
+      str = colors.strokeWing;
+    }
+
     let bx, by, bw, bh;
     if (b.loc === 'front') {
       const topBanner = cfg.banners.find(x => x.loc === 'top');
@@ -655,7 +685,7 @@ function drawBlueprintFront(cfg) {
       by = spaceTop + (spaceBot - spaceTop - bh) / 2;
     } else if (b.loc === 'top') {
       const isFull = b.span === 'full';
-      const bannerW = isFull ? (totalW + cfg.wingW) : cfg.stageW;
+      const bannerW = isFull ? totalW : cfg.stageW;
       const offsetX = isFull ? 0 : cfg.wingW;
       bw = bannerW * scale;
       bh = b.h * scale;
@@ -679,50 +709,19 @@ function drawBlueprintFront(cfg) {
     ctx.fillStyle = str; ctx.font = 'bold 9px Courier New'; ctx.textAlign = 'center';
     ctx.fillText(`${b.label || b.loc.toUpperCase()} — ${b.w}' × ${b.h}'`, bx+bw/2, by+bh/2);
 
-    // dimension arrows
-    drawDim(ctx, bx, by+bh, bx+bw, by+bh, `${b.w}'`, 18);
-    drawDim(ctx, bx+bw, by, bx+bw, by+bh, `${b.h}'`, 18);
+    drawDim(ctx, bx, by+bh, bx+bw, by+bh, `${b.w}'`, 18, colors);
+    drawDim(ctx, bx+bw, by, bx+bw, by+bh, `${b.h}'`, 18, colors);
   });
 
-  // Overall dims
-  drawDim(ctx, fx(0), oy+12, fx(totalW+cfg.wingW), oy+12, `TOTAL ${totalW+cfg.wingW}'`, -20);
-  drawDim(ctx, fx(wL), oy+30, fx(wR), oy+30, `STAGE ${cfg.stageW}'`, -20);
-  drawDim(ctx, fx(0)-30, fy(0), fx(0)-30, fy(cfg.roofH), `${cfg.roofH}' ROOF`, 0);
+  drawDim(ctx, fx(0), oy+12, fx(totalW+cfg.wingW), oy+12, `TOTAL ${totalW+cfg.wingW}'`, -20, colors);
+  drawDim(ctx, fx(wL), oy+30, fx(wR), oy+30, `STAGE ${cfg.stageW}'`, -20, colors);
+  drawDim(ctx, fx(0)-30, fy(0), fx(0)-30, fy(cfg.roofH), `${cfg.roofH}' ROOF`, 0, colors);
 
-  // Label
-  ctx.fillStyle = BP.labelColor; ctx.font = '10px Courier New'; ctx.textAlign = 'left';
+  ctx.fillStyle = colors.dimText; ctx.font = '10px Courier New'; ctx.textAlign = 'left';
   ctx.fillText(`DWG: FRONT-ELV-01  |  ${new Date().toLocaleDateString()}`, PAD, H-12);
 }
 
-function drawBlueprintIsoLeft(cfg) {
-  const W=900,H=500,PAD=80;
-  const ctx = setupCanvas('cvIsoLeft',W,H);
-  showCanvas('cvIsoLeft','phIsoLeft');
-  ctx.fillStyle=BP.bg; ctx.fillRect(0,0,W,H);
-  drawGrid(ctx,W,H,10);
-  ctx.fillStyle=BP.line; ctx.font='bold 11px Courier New';
-  ctx.fillText('ISO LEFT VIEW  —  SCALE: NTS',PAD,22);
-
-  drawIsometricStage(ctx, cfg, W, H, PAD, 'left');
-  ctx.fillStyle=BP.labelColor; ctx.font='10px Courier New'; ctx.textAlign='left';
-  ctx.fillText(`DWG: ISO-LEFT-02  |  ${new Date().toLocaleDateString()}`,PAD,H-12);
-}
-
-function drawBlueprintIsoRight(cfg) {
-  const W=900,H=500,PAD=80;
-  const ctx = setupCanvas('cvIsoRight',W,H);
-  showCanvas('cvIsoRight','phIsoRight');
-  ctx.fillStyle=BP.bg; ctx.fillRect(0,0,W,H);
-  drawGrid(ctx,W,H,10);
-  ctx.fillStyle=BP.line; ctx.font='bold 11px Courier New';
-  ctx.fillText('ISO RIGHT VIEW  —  SCALE: NTS',PAD,22);
-
-  drawIsometricStage(ctx, cfg, W, H, PAD, 'right');
-  ctx.fillStyle=BP.labelColor; ctx.font='10px Courier New'; ctx.textAlign='left';
-  ctx.fillText(`DWG: ISO-RIGHT-03  |  ${new Date().toLocaleDateString()}`,PAD,H-12);
-}
-
-function drawIsometricStage(ctx, cfg, W, H, PAD, side) {
+function drawIsometricStage(ctx, cfg, W, H, PAD, side, colors) {
   const flip = side==='right' ? -1 : 1;
   const isoAngle = Math.PI/6;
   const scaleAll = Math.min((W-PAD*2)/(cfg.stageW+cfg.stageD+cfg.wingW*2)/1.5,
@@ -739,7 +738,7 @@ function drawIsometricStage(ctx, cfg, W, H, PAD, side) {
   const rh = cfg.roofH;
 
   function isoLine(x1,y1,z1,x2,y2,z2,style) {
-    ctx.strokeStyle=style||BP.line; ctx.lineWidth=1.5; ctx.setLineDash([]);
+    ctx.strokeStyle=style||colors.line; ctx.lineWidth=1.5; ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(isoX(x1,y1,z1),isoY(x1,y1,z1));
     ctx.lineTo(isoX(x2,y2,z2),isoY(x2,y2,z2));
@@ -754,43 +753,47 @@ function drawIsometricStage(ctx, cfg, W, H, PAD, side) {
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}
   }
 
-  // Stage platform top face
-  isoFace([[0,0,sh],[sw,0,sh],[sw,sd,sh],[0,sd,sh]],'rgba(74,158,255,0.08)',BP.line);
-  // Stage front face
-  isoFace([[0,0,0],[sw,0,0],[sw,0,sh],[0,0,sh]],'rgba(74,158,255,0.05)',BP.line);
-  // Stage left face
-  isoFace([[0,0,0],[0,sd,0],[0,sd,sh],[0,0,sh]],'rgba(74,158,255,0.07)',BP.line);
+  isoFace([[0,0,sh],[sw,0,sh],[sw,sd,sh],[0,sd,sh]],'rgba(74,158,255,0.08)',colors.line);
+  isoFace([[0,0,0],[sw,0,0],[sw,0,sh],[0,0,sh]],'rgba(74,158,255,0.05)',colors.line);
+  isoFace([[0,0,0],[0,sd,0],[0,sd,sh],[0,0,sh]],'rgba(74,158,255,0.07)',colors.line);
 
-  // Wing left
-  isoFace([[-ww,0,0],[-ww,sd,0],[-ww,sd,wh],[-ww,0,wh]],'rgba(74,158,255,0.06)',BP.line);
-  isoFace([[-ww,0,0],[0,0,0],[0,0,wh],[-ww,0,wh]],'rgba(74,158,255,0.04)',BP.line);
-  isoFace([[-ww,0,wh],[0,0,wh],[0,sd,wh],[-ww,sd,wh]],'rgba(74,158,255,0.03)',BP.line);
+  // Both wings always
+  isoFace([[-ww,0,0],[-ww,sd,0],[-ww,sd,wh],[-ww,0,wh]],'rgba(74,158,255,0.06)',colors.line);
+  isoFace([[-ww,0,0],[0,0,0],[0,0,wh],[-ww,0,wh]],'rgba(74,158,255,0.04)',colors.line);
+  isoFace([[-ww,0,wh],[0,0,wh],[0,sd,wh],[-ww,sd,wh]],'rgba(74,158,255,0.03)',colors.line);
 
-  // Wing right
-  isoFace([[sw,0,0],[sw+ww,0,0],[sw+ww,0,wh],[sw,0,wh]],'rgba(74,158,255,0.04)',BP.line);
-  isoFace([[sw+ww,0,0],[sw+ww,sd,0],[sw+ww,sd,wh],[sw+ww,0,wh]],'rgba(74,158,255,0.06)',BP.line);
+  isoFace([[sw,0,0],[sw+ww,0,0],[sw+ww,0,wh],[sw,0,wh]],'rgba(74,158,255,0.04)',colors.line);
+  isoFace([[sw+ww,0,0],[sw+ww,sd,0],[sw+ww,sd,wh],[sw+ww,0,wh]],'rgba(74,158,255,0.06)',colors.line);
 
-  // Roof truss bars
   isoLine(0,0,rh,sw,0,rh);
   isoLine(0,sd,rh,sw,sd,rh);
   isoLine(0,0,rh,0,sd,rh);
   isoLine(sw,0,rh,sw,sd,rh);
-  // Verticals
+
   isoLine(-ww,0,0,-ww,0,rh+1);
   isoLine(sw+ww,0,0,sw+ww,0,rh+1);
   isoLine(0,0,sh,0,0,rh);
   isoLine(sw,0,sh,sw,0,rh);
 
-  // Diagonals on roof truss
   for(let i=0;i<4;i++){
     const t=i/4;
-    isoLine(sw*t,0,rh,sw*(t+0.25),sd,rh,BP.trussX);
+    isoLine(sw*t,0,rh,sw*(t+0.25),sd,rh,colors.line);
   }
 
-  // Banners in iso - now includes top banner
+  // Banners - both wings on every iso
   cfg.banners.forEach((b,i) => {
-    const col = ['rgba(255,80,80,0.25)','rgba(80,150,255,0.25)','rgba(80,220,150,0.25)','rgba(255,200,50,0.25)'][i%4];
-    const str = ['#ff5050','#5096ff','#50dc96','#ffc832'][i%4];
+    let col, str;
+    if (b.loc === 'top') {
+      col = colors.bannerTop;
+      str = colors.strokeTop;
+    } else if (b.loc === 'front') {
+      col = colors.bannerFront;
+      str = colors.strokeFront;
+    } else {
+      col = colors.bannerWing;
+      str = colors.strokeWing;
+    }
+
     if(b.loc==='front'){
       const topBanner = cfg.banners.find(x => x.loc === 'top');
       const topH = topBanner ? topBanner.h : 0;
@@ -801,6 +804,8 @@ function drawIsometricStage(ctx, cfg, W, H, PAD, side) {
       isoFace([[bx2,sd,midZ],[bx2+bw2,sd,midZ],[bx2+bw2,sd,midZ+banH],[bx2,sd,midZ+banH]],col,str);
     } else if(b.loc==='left'){
       isoFace([[-ww,0,sh],[0,0,sh],[0,0,sh+Math.min(b.h,cfg.wingH)],[-ww,0,sh+Math.min(b.h,cfg.wingH)]],col,str);
+    } else if(b.loc==='right'){
+      isoFace([[sw,0,sh],[sw+ww,0,sh],[sw+ww,0,sh+Math.min(b.h,cfg.wingH)],[sw,0,sh+Math.min(b.h,cfg.wingH)]],col,str);
     } else if(b.loc==='top'){
       const isFull = b.span === 'full';
       const bannerW = isFull ? (sw + ww*2) : sw;
@@ -809,16 +814,41 @@ function drawIsometricStage(ctx, cfg, W, H, PAD, side) {
       isoFace([[offsetX, 0, topZ], [offsetX + bannerW, 0, topZ], [offsetX + bannerW, 0, rh], [offsetX, 0, rh]], col, str);
     }
   });
-
-  // Dim labels
-  ctx.fillStyle = BP.dimText; ctx.font='9px Courier New'; ctx.textAlign='center';
-  const ox=isoX(sw/2,0,0), oy2=isoY(sw/2,0,0)+14;
-  ctx.fillText(`STAGE W: ${sw}'`,ox,oy2+10);
-  const ox2=isoX(0,sd/2,sh)+18, oy3=isoY(0,sd/2,sh);
-  ctx.fillText(`DEPTH: ${sd}'`,ox2+20,oy3);
 }
 
-// ─── Download ────────────────────────────────────────────────────────────────
+function drawBlueprintIsoLeft(cfg) {
+  const W=900,H=500,PAD=80;
+  const ctx = setupCanvas('cvIsoLeft',W,H);
+  showCanvas('cvIsoLeft','phIsoLeft');
+  const colors = getColors(printMode);
+  ctx.fillStyle=colors.bg; ctx.fillRect(0,0,W,H);
+  drawGrid(ctx,W,H,10,5,colors);
+  ctx.fillStyle=colors.line; ctx.font='bold 11px Courier New';
+  ctx.fillText('ISO LEFT VIEW  —  SCALE: NTS',PAD,22);
+  ctx.fillText(`${cfg.jobName}`, PAD, 36);
+
+  drawIsometricStage(ctx, cfg, W, H, PAD, 'left', colors);
+  ctx.fillStyle=colors.dimText; ctx.font='10px Courier New'; ctx.textAlign='left';
+  ctx.fillText(`DWG: ISO-LEFT-02  |  ${new Date().toLocaleDateString()}`,PAD,H-12);
+}
+
+function drawBlueprintIsoRight(cfg) {
+  const W=900,H=500,PAD=80;
+  const ctx = setupCanvas('cvIsoRight',W,H);
+  showCanvas('cvIsoRight','phIsoRight');
+  const colors = getColors(printMode);
+  ctx.fillStyle=colors.bg; ctx.fillRect(0,0,W,H);
+  drawGrid(ctx,W,H,10,5,colors);
+  ctx.fillStyle=colors.line; ctx.font='bold 11px Courier New';
+  ctx.fillText('ISO RIGHT VIEW  —  SCALE: NTS',PAD,22);
+  ctx.fillText(`${cfg.jobName}`, PAD, 36);
+
+  drawIsometricStage(ctx, cfg, W, H, PAD, 'right', colors);
+  ctx.fillStyle=colors.dimText; ctx.font='10px Courier New'; ctx.textAlign='left';
+  ctx.fillText(`DWG: ISO-RIGHT-03  |  ${new Date().toLocaleDateString()}`,PAD,H-12);
+}
+
+// Download
 function downloadCanvas(id, name) {
   const cv = document.getElementById(id);
   if (cv.style.display === 'none') { alert('Generate mockups first!'); return; }
@@ -828,8 +858,8 @@ function downloadCanvas(id, name) {
   a.click();
 }
 
-// Auto-generate on load
-window.addEventListener('load', () => setTimeout(generateAll, 200));
+// Auto generate
+window.addEventListener('load', () => setTimeout(generateAll, 300));
 </script>
 </body>
 </html>
